@@ -29,6 +29,8 @@ export type StellarPaymentErrorKind =
    */
   | 'slippage_exceeded'
   | 'malformed_transaction'
+  /** The caller's own input is wrong (see `validatePaymentParams`); never a network problem. */
+  | 'validation'
   | 'timing'
   | 'network_error'
   | 'unknown';
@@ -81,18 +83,26 @@ export class StellarPaymentError extends Error {
   readonly kind: StellarPaymentErrorKind;
   readonly transactionCode?: string;
   readonly operationCodes?: string[];
+  /** Set for `validation` errors: which input was rejected. */
+  readonly field?: string;
   override readonly cause?: unknown;
 
   constructor(
     kind: StellarPaymentErrorKind,
     message: string,
-    options?: { transactionCode?: string; operationCodes?: string[]; cause?: unknown },
+    options?: {
+      transactionCode?: string;
+      operationCodes?: string[];
+      field?: string;
+      cause?: unknown;
+    },
   ) {
     super(message);
     this.name = 'StellarPaymentError';
     this.kind = kind;
     this.transactionCode = options?.transactionCode;
     this.operationCodes = options?.operationCodes;
+    this.field = options?.field;
     this.cause = options?.cause;
   }
 }

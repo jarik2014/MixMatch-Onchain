@@ -1,6 +1,7 @@
 import { Asset, BASE_FEE, Memo, Operation, TransactionBuilder } from '@stellar/stellar-sdk';
 import type { DefaultStellarClient } from './client.js';
 import { classifyStellarPaymentError } from './payment-errors.js';
+import { validatePaymentParams } from './payment-validation.js';
 import type { StellarAssetRef } from './types/index.js';
 import type { Wallet } from './wallet.js';
 
@@ -32,6 +33,11 @@ export class StellarPaymentService {
 
   /** Builds, signs, and submits a payment — native XLM if `params.asset` is omitted, otherwise the given asset. */
   async submitPayment(params: SubmitPaymentParams): Promise<StellarPaymentResult> {
+    // Reject bad input before touching the network: otherwise the throw happens
+    // inside the `try` below and classifyStellarPaymentError reports it as
+    // "Failed to reach Stellar network" (#1258).
+    validatePaymentParams(params);
+
     try {
       const sourceAccount = await this.client.horizon.loadAccount(params.sourceWallet.publicKey);
 
