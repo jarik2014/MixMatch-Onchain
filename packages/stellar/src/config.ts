@@ -19,9 +19,27 @@ const NETWORK_DEFAULTS: Record<StellarNetwork, { horizonUrl: string; rpcUrl: str
   },
 };
 
+const KNOWN_NETWORKS = ['testnet', 'public'] as const;
+
+/**
+ * Resolves `STELLAR_NETWORK`.
+ *
+ * Unset stays a documented default (testnet), but a *set* value we do not
+ * recognise is an error: silently falling back to testnet means a deployment
+ * that meant mainnet talks to the wrong network, and a typo reports success
+ * while pointing at testnet (#1246).
+ */
 function parseNetwork(raw: string | undefined): StellarNetwork {
-  if (raw === 'public') return 'public';
-  return 'testnet';
+  const value = raw?.trim().toLowerCase();
+  if (!value) return 'testnet';
+
+  const match = KNOWN_NETWORKS.find((known) => known === value);
+  if (match) return match;
+
+  throw new Error(
+    `Unknown STELLAR_NETWORK "${raw}". Expected one of: ${KNOWN_NETWORKS.join(', ')}. ` +
+      'Refusing to guess a network — leave the variable unset to use testnet.',
+  );
 }
 
 /** Builds a `StellarConfig` from environment variables, falling back to sensible network defaults. */

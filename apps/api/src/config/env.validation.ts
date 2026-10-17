@@ -90,8 +90,14 @@ export function validateEnv(env: NodeJS.ProcessEnv = process.env): EnvConfig {
     );
   }
 
-  const stellarNetwork =
-    env.STELLAR_NETWORK?.trim() === 'public' ? 'public' : 'testnet';
+  // #1246: unset is a documented default, anything unrecognised is a startup error.
+  const rawStellarNetwork = env.STELLAR_NETWORK?.trim().toLowerCase();
+  if (rawStellarNetwork && rawStellarNetwork !== 'public' && rawStellarNetwork !== 'testnet') {
+    throw new Error(
+      `Unknown STELLAR_NETWORK "${env.STELLAR_NETWORK}". Expected "testnet" or "public" — refusing to guess.`,
+    );
+  }
+  const stellarNetwork = rawStellarNetwork === 'public' ? 'public' : 'testnet';
 
   const vaultAddr = env.VAULT_ADDR?.trim() || undefined;
   const vaultToken = env.VAULT_TOKEN?.trim() || undefined;

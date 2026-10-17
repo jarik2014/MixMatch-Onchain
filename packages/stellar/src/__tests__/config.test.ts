@@ -24,9 +24,17 @@ describe('loadStellarConfig', () => {
     expect(config.rpcUrl).toBe('https://custom-rpc.example.com');
   });
 
-  it('treats an unrecognized network value as testnet', () => {
-    const config = loadStellarConfig({ STELLAR_NETWORK: 'not-a-real-network' });
-    expect(config.network).toBe('testnet');
+  it('throws on an unrecognized network value instead of guessing testnet', () => {
+    expect(() => loadStellarConfig({ STELLAR_NETWORK: 'not-a-real-network' })).toThrow(
+      /Unknown STELLAR_NETWORK "not-a-real-network"/,
+    );
+  });
+
+  it('keeps the unset default and normalises the accepted values', () => {
+    expect(() => loadStellarConfig({ STELLAR_NETWORK: 'mainnet' })).toThrow(/testnet, public/);
+    expect(loadStellarConfig({}).network).toBe('testnet');
+    expect(loadStellarConfig({ STELLAR_NETWORK: '  ' }).network).toBe('testnet');
+    expect(loadStellarConfig({ STELLAR_NETWORK: ' PUBLIC ' }).network).toBe('public');
   });
 
   it('leaves escrowContractId undefined when STELLAR_ESCROW_CONTRACT_ID is unset', () => {
